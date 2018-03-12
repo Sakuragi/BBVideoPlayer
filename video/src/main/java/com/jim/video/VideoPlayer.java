@@ -50,6 +50,7 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
     private SurfaceHolder.Callback mShCallBack = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
+            Log.d(TAG,"surfaceCreated");
             mSurfaceHolder = holder;
             start();
         }
@@ -90,8 +91,7 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     @Override
     public void start() {
-        if (isCanStart() && !TextUtils.isEmpty(uri)
-                && mSurfaceHolder != null) {
+        if (isCanStart() && mSurfaceHolder != null) {
             mMediaPlayer.start();
             Log.d(TAG, "start()");
         }
@@ -181,7 +181,7 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
         currentPlayState=STATE_PREPARED;
         if (mMediaPlayer != null && isCanStart()) {
             Log.d(TAG, "onPrepared");
-            mMediaPlayer.start();
+            start();
             currentPlayState = STATE_PLAYING;
         }
     }

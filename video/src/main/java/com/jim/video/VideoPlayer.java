@@ -1,19 +1,21 @@
 package com.jim.video;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.media.session.MediaController;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import java.io.IOException;
-import java.net.URL;
+import java.util.Map;
 
 /**
  * Created by Jim on 2018/3/6 0006.
@@ -34,13 +36,34 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
     private static final int STATE_STOP = 7;//停止
     private static final int STATE_SUSPEND_UNSUPPORTED = 8;
 
-    private final String TAG=this.getClass().getSimpleName();
+    private final String TAG = this.getClass().getSimpleName();
 
     private ViewGroup container;
-    private SurfaceView mSurfaceView;
     private MediaPlayer mMediaPlayer;
-    private String url;
+    private String uri;
     private int currentPlayState;
+    private SurfaceView mSurfaceView;
+    private SurfaceHolder mSurfaceHolder;
+    private Context mContext;
+    private MediaController mMediaController;
+
+    private SurfaceHolder.Callback mShCallBack = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            mSurfaceHolder = holder;
+            start();
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+
+        }
+    };
 
     public VideoPlayer(@NonNull Context context, @Nullable AttributeSet attrs) {
         this(context, attrs, 0);
@@ -48,22 +71,41 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     public VideoPlayer(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        initView(context);
+        init(context);
+        mContext = context;
     }
 
-    private void initView(Context context) {
-        container = new FrameLayout(context);
-        container.setBackgroundColor(Color.BLACK);
-        this.addView(container);
+    private void init(Context context) {
+        mSurfaceView = new SurfaceView(context);
+//        mSurfaceHolder=mSurfaceView.getHolder();
+        mSurfaceView.getHolder().addCallback(mShCallBack);
+//        container = new FrameLayout(context);
+        LayoutParams params = new LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT);
+//        container.setBackgroundColor(Color.BLACK);
+        this.addView(mSurfaceView, params);
+        currentPlayState = STATE_IDLE;
     }
 
     @Override
     public void start() {
-        initMediaPlayer();
+        if (isCanStart() && !TextUtils.isEmpty(uri)
+                && mSurfaceHolder != null) {
+            mMediaPlayer.start();
+            Log.d(TAG, "start()");
+        }
     }
 
-    public void setDataSource(String url) {
-        this.url = url;
+    private boolean isCanStart(){
+        return  currentPlayState != STATE_IDLE&&
+                currentPlayState != STATE_PREPARING &&
+                currentPlayState != STATE_ERROR;
+    }
+
+    public void setDataSource(String uri, Map<String, String> headers) {
+        this.uri = uri;
+        initMediaPlayer();
     }
 
     private void initMediaPlayer() {
@@ -72,14 +114,16 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
         mMediaPlayer.setOnErrorListener(this);
         mMediaPlayer.setOnPreparedListener(this);
         mMediaPlayer.setOnSeekCompleteListener(this);
+        mMediaPlayer.setDisplay(mSurfaceHolder);
         try {
-            if (TextUtils.isEmpty(url)){
-                throw new IllegalArgumentException("leak of url");
+            if (TextUtils.isEmpty(uri)) {
+                throw new IllegalArgumentException("leak of uri");
             }
-            mMediaPlayer.setDataSource(url);
+            mMediaPlayer.setDataSource(mContext, Uri.parse(uri), null);
             mMediaPlayer.prepareAsync();
-        } catch (IOException e) {
-            Log.e(TAG,e.toString());
+            currentPlayState=STATE_PREPARING;
+        } catch (Exception e) {
+            Log.e(TAG, e.toString());
             return;
         }
     }
@@ -104,6 +148,21 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     }
 
+    @Override
+    public void next() {
+
+    }
+
+    @Override
+    public void previous() {
+
+    }
+
+    @Override
+    public void setController(MediaController mediaController) {
+        this.mMediaController = mediaController;
+    }
+
     //流媒体播放完成时回调
     @Override
     public void onCompletion(MediaPlayer mp) {
@@ -119,9 +178,11 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
     //    当装载流媒体完毕的时候回调
     @Override
     public void onPrepared(MediaPlayer mp) {
-        if (mMediaPlayer != null &&currentPlayState==0){
+        currentPlayState=STATE_PREPARED;
+        if (mMediaPlayer != null && isCanStart()) {
+            Log.d(TAG, "onPrepared");
             mMediaPlayer.start();
-            currentPlayState=STATE_PLAYING;
+            currentPlayState = STATE_PLAYING;
         }
     }
 

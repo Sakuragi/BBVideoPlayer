@@ -1,5 +1,7 @@
 package com.jim.video;
 
+import android.media.session.MediaController;
+
 import java.util.Map;
 
 /**
@@ -13,4 +15,7 @@ public interface IVideoPlayer {
     void Resume();
     void stop();
     void destroy();
+    void next();
+    void previous();
+    void setController(MediaController mediaController);
 }

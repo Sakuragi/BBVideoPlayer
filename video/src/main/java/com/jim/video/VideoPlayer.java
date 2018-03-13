@@ -51,8 +51,7 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             Log.d(TAG,"surfaceCreated");
-            mSurfaceHolder = holder;
-            start();
+            mSurfaceHolder=holder;
         }
 
         @Override
@@ -91,8 +90,8 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     @Override
     public void start() {
-        if (isCanStart() && mSurfaceHolder != null) {
-            mMediaPlayer.start();
+        if (mSurfaceHolder != null) {
+            initMediaPlayer();
             Log.d(TAG, "start()");
         }
     }
@@ -105,7 +104,6 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     public void setDataSource(String uri, Map<String, String> headers) {
         this.uri = uri;
-        initMediaPlayer();
     }
 
     private void initMediaPlayer() {

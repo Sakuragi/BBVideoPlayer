@@ -28,13 +28,7 @@ public class MediaProxy {
     private SocketListeningRequest mRequest = new SocketListeningRequest();
 
     public void init() {
-        try {
-            mServerSocket = new ServerSocket(PROXY_PORT, 0, InetAddress.getLocalHost());
-            mServerSocket.setSoTimeout(5000);
-            listenLocalRequest();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        listenLocalRequest();
     }
 
     private void listenLocalRequest() {
@@ -43,17 +37,29 @@ public class MediaProxy {
     }
 
     public String getProxyURL(String url) {
-        mRequest.url = url;
-        return String.format(Locale.getDefault(), "http://127.0.0.1:%d/%s", PROXY_PORT,"low/luoo/radio889/01.mp3");
+        String requestParams="";
+        if (url.startsWith("http") || url.startsWith("https")) {
+            mRequest.url = url;
+            String[] str = url.split("//");
+            int index=str[1].indexOf("/");
+            mRequest.host=str[1].substring(0,index);
+            requestParams=str[1].substring(index+1,str[1].length());
+            Log.d(TAG,"host: "+mRequest.host+ " requestParams: "+requestParams);
+        }
+        return String.format(Locale.getDefault(), "http://127.0.0.1:%d/%s", PROXY_PORT, requestParams);
     }
 
     private class SocketListeningRequest implements Runnable {
 
         public String url;
+        public String urlParams;
+        public String host;
 
         @Override
         public void run() {
             try {
+                mServerSocket = new ServerSocket(PROXY_PORT, 0, InetAddress.getLocalHost());
+                mServerSocket.setSoTimeout(5000);
                 if (mServerSocket == null || mServerSocket.isClosed()) {
                     return;
                 }
@@ -62,23 +68,23 @@ public class MediaProxy {
                 InputStream cacheIs = null;
                 Socket client = null;
                 while (!Thread.currentThread().isInterrupted()) {
-                    Log.d(TAG,"====Waiting for connected=== ");
+                    Log.d(TAG, "====Waiting for connected=== ");
                     client = mServerSocket.accept();
                     if (client == null) {
                         Log.i(TAG, "client is null");
                         return;
                     }
-                    cacheIs=client.getInputStream();
+                    cacheIs = client.getInputStream();
                     Log.d(TAG, "------------client connected--------");
                     byte[] buffer = new byte[1024];
                     int length;
-                    String str="";
+                    String str = "";
                     while ((length = cacheIs.read(buffer)) != -1) {
-                        str+=new String(buffer);
-                        if (str.contains("GET")&&str.contains("\r\n\r\n")){
-                            Log.d(TAG,"str: "+str);
-                            str=str.replace("127.0.0.1:8123","mp3-cdn.luoo.net");
-                            Log.d(TAG,"after str: "+str);
+                        str += new String(buffer);
+                        if (str.contains("GET") && str.contains("\r\n\r\n")) {
+                            Log.d(TAG, "str: " + str);
+                            str = str.replace("127.0.0.1:8123", host);
+                            Log.d(TAG, "after str: " + str);
                             break;
                         }
                     }
@@ -100,16 +106,16 @@ public class MediaProxy {
                 client.getOutputStream().flush();
             }
         } catch (IOException e) {
-            Log.d(TAG,e.toString());
+            Log.d(TAG, e.toString());
         }
     }
 
     private Socket sendRemoteRequest(String requestParams) {
         Socket remoteSocket = null;
         try {
-            Log.d(TAG,"remote url: "+mRequest.url);
+            Log.d(TAG, "remote url: " + mRequest.url);
             InetAddress address = InetAddress.getByName("mp3-cdn.luoo.net");
-            Log.d(TAG, "host adress: " + new String(address.getAddress(),"UTF-8"));
+            Log.d(TAG, "host adress: " + new String(address.getAddress(), "UTF-8"));
             Log.d(TAG, "host name: " + address.getHostName());
             remoteSocket = new Socket();
             remoteSocket.connect(new InetSocketAddress(address.getHostName(), 80));
@@ -117,7 +123,7 @@ public class MediaProxy {
                     requestParams.getBytes("UTF-8"));
             remoteSocket.getOutputStream().flush();
         } catch (IOException e) {
-            Log.d(TAG,e.toString());
+            Log.d(TAG, e.toString());
         }
         return remoteSocket;
     }

@@ -21,11 +21,13 @@ public class MediaProxyServer {
 
     private final String TAG = MediaProxyServer.class.getSimpleName();
     private static final String PROXY_HOST = "127.0.0.1";
+    private static final int STATE_INIT=1;
 
     private ServerSocket mServerSocket;
     private final ExecutorService requestProcessPool = Executors.newFixedThreadPool(4);
     private int port;
     private Thread listenRequestsThread;
+    private int currentServerState=-1;
 
     public MediaProxyServer() {
         init();
@@ -71,6 +73,7 @@ public class MediaProxyServer {
         @Override
         public void run() {
             startSignal.countDown();
+            currentServerState=STATE_INIT;
             waittingForRequests();
         }
     }

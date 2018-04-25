@@ -99,16 +99,15 @@ public class MediaProxy {
     }
 
     private void processRequest(String str, Socket client) {
-
     }
 
     private void resRequest(Socket client, Socket remoteSocket) {
-        byte[] buffer = new byte[1024 * 16];
-//        byte[] buffer1 = new byte[1024 * 8];
+        byte[] buffer = new byte[1024 * 1];
         try {
-            int readBytesLength=-1;
-            while ((readBytesLength=remoteSocket.getInputStream().read(buffer)) != -1) {
-                client.getOutputStream().write(buffer,0,readBytesLength);
+            int readLength=-1;
+            while ((readLength=remoteSocket.getInputStream().read(buffer,0,buffer.length)) != -1) {
+                Log.d(TAG,"read length: "+readLength);
+                client.getOutputStream().write(buffer,0,buffer.length);
                 client.getOutputStream().flush();
             }
         } catch (IOException e) {

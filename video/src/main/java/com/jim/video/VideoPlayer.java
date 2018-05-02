@@ -13,6 +13,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.VideoView;
 
 import java.io.IOException;
 import java.util.Map;
@@ -50,8 +51,8 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
     private SurfaceHolder.Callback mShCallBack = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            Log.d(TAG,"surfaceCreated");
-            mSurfaceHolder=holder;
+            Log.d(TAG, "surfaceCreated");
+            mSurfaceHolder = holder;
         }
 
         @Override
@@ -90,14 +91,12 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     @Override
     public void start() {
-        if (mSurfaceHolder != null) {
-            initMediaPlayer();
-            Log.d(TAG, "start()");
-        }
+        initMediaPlayer();
+        Log.d(TAG, "start()");
     }
 
-    private boolean isCanStart(){
-        return  currentPlayState != STATE_IDLE&&
+    private boolean isCanStart() {
+        return currentPlayState != STATE_IDLE &&
                 currentPlayState != STATE_PREPARING &&
                 currentPlayState != STATE_ERROR;
     }
@@ -119,7 +118,7 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
             }
             mMediaPlayer.setDataSource(mContext, Uri.parse(uri), null);
             mMediaPlayer.prepareAsync();
-            currentPlayState=STATE_PREPARING;
+            currentPlayState = STATE_PREPARING;
         } catch (Exception e) {
             Log.e(TAG, e.toString());
             return;
@@ -128,31 +127,31 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
 
     @Override
     public void pause() {
-
+        if (mMediaPlayer.isPlaying()){
+            mMediaPlayer.pause();
+        }
     }
 
     @Override
     public void Resume() {
-
+        if (mMediaPlayer!=null&&isCanStart()){
+            Log.d(TAG,"resume");
+            mMediaPlayer.start();
+        }
     }
 
     @Override
     public void stop() {
-
+        if (mMediaPlayer!=null){
+            mMediaPlayer.stop();
+            mMediaPlayer.release();
+            mMediaPlayer=null;
+            currentPlayState=STATE_IDLE;
+        }
     }
 
     @Override
     public void destroy() {
-
-    }
-
-    @Override
-    public void next() {
-
-    }
-
-    @Override
-    public void previous() {
 
     }
 
@@ -176,7 +175,7 @@ public class VideoPlayer extends FrameLayout implements IVideoPlayer,
     //    当装载流媒体完毕的时候回调
     @Override
     public void onPrepared(MediaPlayer mp) {
-        currentPlayState=STATE_PREPARED;
+        currentPlayState = STATE_PREPARED;
         if (mMediaPlayer != null && isCanStart()) {
             Log.d(TAG, "onPrepared");
             start();

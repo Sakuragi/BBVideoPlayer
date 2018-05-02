@@ -15,7 +15,5 @@ public interface IVideoPlayer {
     void Resume();
     void stop();
     void destroy();
-    void next();
-    void previous();
     void setController(MediaController mediaController);
 }

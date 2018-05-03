@@ -88,6 +88,7 @@ public class MediaProxy {
                             break;
                         }
                     }
+                    processRequest(str,client);
                     Socket remoteSocket = sendRemoteRequest(str);
                     resRequest(client, remoteSocket);
                 }
@@ -95,6 +96,9 @@ public class MediaProxy {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void processRequest(String str, Socket client) {
     }
 
     private void resRequest(Socket client, Socket remoteSocket) {
@@ -115,7 +119,7 @@ public class MediaProxy {
         Socket remoteSocket = null;
         try {
             Log.d(TAG, "remote url: " + mRequest.url);
-            InetAddress address = InetAddress.getByName("mp3-cdn.luoo.net");
+            InetAddress address = InetAddress.getByName(mRequest.host);
             Log.d(TAG, "host adress: " + new String(address.getAddress(), "UTF-8"));
             Log.d(TAG, "host name: " + address.getHostName());
             remoteSocket = new Socket();

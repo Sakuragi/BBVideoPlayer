@@ -103,7 +103,7 @@ public class MediaProxyServer {
     private void handleRequests(Socket client) {
         try {
             Request request = GetRequest(client);
-            ServerSocket serverSocket=new ServerSocket()
+//            ServerSocket serverSocket=new ServerSocket()
         } catch (IOException e) {
             e.printStackTrace();
         }

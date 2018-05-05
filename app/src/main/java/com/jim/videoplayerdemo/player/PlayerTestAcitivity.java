@@ -8,7 +8,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
-import com.danikula.videocache.HttpProxyCacheServer;
 import com.jim.videoplayerdemo.R;
 import com.jim.videoplayerdemo.player1.MediaProxyServer;
 
@@ -36,13 +35,13 @@ public class PlayerTestAcitivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 //                player.setDataSource("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
-                HttpProxyCacheServer proxy = newProxy();
-                proxy.getProxyUrl("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
-                MediaProxyServer server=new MediaProxyServer();
-                Log.d("TAG", "Use proxy url " + server.getProxyHostUrl("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3"));
+//                HttpProxyCacheServer proxy = newProxy();
+//                proxy.getProxyUrl("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
+//                MediaProxyServer server=new MediaProxyServer();
+//                Log.d("TAG", "Use proxy url " + server.getProxyHostUrl("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3"));
 //                proxy.registerCacheListener(this, "http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
-                String proxyUrl = proxy.getProxyUrl("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
-                Log.d("TAG", "Use proxy url " + proxyUrl + " instead of original url " );
+//                String proxyUrl = proxy.getProxyUrl("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
+//                Log.d("TAG", "Use proxy url " + proxyUrl + " instead of original url " );
 //                player.setDataSource("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
                 new Handler().postDelayed(new Runnable() {
                     @Override
@@ -67,11 +66,11 @@ public class PlayerTestAcitivity extends AppCompatActivity {
         });
     }
 
-    private HttpProxyCacheServer newProxy() {
-        return new HttpProxyCacheServer.Builder(this)
-                .cacheDirectory(getVideoCacheDir(this))
-                .build();
-    }
+//    private HttpProxyCacheServer newProxy() {
+//        return new HttpProxyCacheServer.Builder(this)
+//                .cacheDirectory(getVideoCacheDir(this))
+//                .build();
+//    }
 
     public static File getVideoCacheDir(Context context) {
         return new File(context.getExternalCacheDir(), "video-cache");

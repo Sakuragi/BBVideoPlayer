@@ -13,7 +13,7 @@ public class Request {
 
 //    private final String MATCHER_URL= Pattern.compile("GET");
 
-    private String requestUrl;
+    public String requestUrl;
 
     public Request(String request){
         initRequestParam(request);

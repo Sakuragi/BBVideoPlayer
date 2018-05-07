@@ -7,10 +7,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -110,7 +112,23 @@ public class MediaProxyServer {
     }
 
     private void processRequest(Request request, Socket client) {
-
+        URLConnection connection= null;
+        InputStream is=null;
+        OutputStream os=null;
+        try {
+            connection = request.openConnection();
+            is=connection.getInputStream();
+            byte[] buffer=new byte[1024*4];
+            int readBytes=-1;
+            while ((readBytes=is.read(buffer,0,buffer.length))!=-1){
+                os.write(buffer,0,readBytes);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            Util.closeCloseableQuietly(is);
+            Util.closeCloseableQuietly(os);
+        }
     }
 
     private Request GetRequest(Socket client) throws IOException {

@@ -48,6 +48,7 @@ public class MediaProxyServer {
             listenRequestsThread = new Thread(new ListenRequestRunnable(signal));
             listenRequestsThread.start();
             signal.await();
+            Log.d(TAG,"listen request thread was started");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -79,6 +80,7 @@ public class MediaProxyServer {
     private void waittingForRequests() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
+                Log.i(TAG, "=======waitting for client connect=======");
                 Socket client = mServerSocket.accept();
                 Log.i(TAG, "=======client connected=======");
                 requestProcessPool.submit(new HandleRequestsRunnable(client));

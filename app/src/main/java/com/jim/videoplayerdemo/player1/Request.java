@@ -58,7 +58,10 @@ public class Request {
         String[] requestParts = request.split("\n");
         StringTokenizer tokenizer = new StringTokenizer(requestParts[0]);
         method = tokenizer.nextToken();
-        requestUrl = tokenizer.nextToken();
+        requestUrl = Util.decodeUrl(tokenizer.nextToken());
+        if (requestUrl.startsWith("/")){
+            requestUrl=requestUrl.substring(1);
+        }
         Log.d(TAG, "method: " + method + " url: " + requestUrl);
     }
 
@@ -98,6 +101,7 @@ public class Request {
                 continue;
             }
             String value = requestParts[i].substring(separatorLocation + 1).trim();
+            Log.d(TAG,"name: "+name+" value: "+value);
             urlConnection.setRequestProperty(name,value);
         }
         urlConnection.setRequestProperty(RANGE,RANGE_PARAMS+offset+"-");

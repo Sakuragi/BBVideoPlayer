@@ -43,7 +43,7 @@ public class PlayerTestAcitivity extends AppCompatActivity {
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        player.setDataSource("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3\"");
+                        player.setDataSource("http://mp3-cdn.luoo.net/low/luoo/radio889/01.mp3");
                     }
                 },5000);
             }

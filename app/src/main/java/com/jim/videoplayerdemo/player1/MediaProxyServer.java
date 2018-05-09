@@ -120,9 +120,11 @@ public class MediaProxyServer {
         try {
             connection = request.openConnection();
             is=connection.getInputStream();
+            os=client.getOutputStream();
             byte[] buffer=new byte[1024*4];
             int readBytes=-1;
             while ((readBytes=is.read(buffer,0,buffer.length))!=-1){
+                Log.d(TAG,"write to client: "+readBytes);
                 os.write(buffer,0,readBytes);
             }
         } catch (IOException e) {
@@ -140,7 +142,7 @@ public class MediaProxyServer {
         while (!TextUtils.isEmpty(line = reader.readLine())) {
             request.append(line).append("\n");
         }
-        Util.closeCloseableQuietly(reader);
+//        Util.closeCloseableQuietly(reader);
         return new Request(request.toString());
     }
 

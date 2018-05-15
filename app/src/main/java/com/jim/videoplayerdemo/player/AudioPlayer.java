@@ -3,6 +3,8 @@ package com.jim.videoplayerdemo.player;
 import android.media.MediaPlayer;
 import android.util.Log;
 
+import com.jim.videoplayerdemo.player1.MediaProxyServer;
+
 import java.io.IOException;
 
 /**
@@ -17,11 +19,10 @@ public class AudioPlayer implements MediaPlayer.OnCompletionListener,
     private final String TAG=AudioPlayer.class.getSimpleName();
     private MediaPlayer mMediaPlayer;
     private String testUrl="https://video.ydlcdn.com/2018/01/25/786b3e1640569ac1379505fdb0f8d1a8.mp3";
-    private MediaProxy mMediaProxy;
+    private MediaProxyServer mMediaProxy;
 
     public AudioPlayer(){
-        mMediaProxy=new MediaProxy();
-        mMediaProxy.init();
+        mMediaProxy=new MediaProxyServer();
     }
 
     public void play() {
@@ -52,7 +53,9 @@ public class AudioPlayer implements MediaPlayer.OnCompletionListener,
     public void setDataSource(String url) {
         try {
             mMediaPlayer = new MediaPlayer();
-            mMediaPlayer.setDataSource(mMediaProxy.getProxyURL(url));
+            String proxyUrl=mMediaProxy.getProxyHostUrl(url);
+            Log.d(TAG,"proxyUrl: "+proxyUrl);
+            mMediaPlayer.setDataSource(mMediaProxy.getProxyHostUrl(url));
             mMediaPlayer.setOnPreparedListener(this);
             mMediaPlayer.prepareAsync();
             mMediaPlayer.setOnErrorListener(this);

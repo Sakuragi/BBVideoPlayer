@@ -3,6 +3,7 @@ package com.jim.videoplayerdemo.player1;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 
 /**
@@ -21,7 +22,7 @@ public class Util {
 
     public static String decodeUrl(String url){
         try {
-            return URLEncoder.encode(url, "utf-8");
+            return URLDecoder.decode(url, "utf-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Error encoding url", e);
         }

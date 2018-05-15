@@ -7,10 +7,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -46,6 +48,7 @@ public class MediaProxyServer {
             listenRequestsThread = new Thread(new ListenRequestRunnable(signal));
             listenRequestsThread.start();
             signal.await();
+            Log.d(TAG,"listen request thread was started");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -77,6 +80,7 @@ public class MediaProxyServer {
     private void waittingForRequests() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
+                Log.i(TAG, "=======waitting for client connect=======");
                 Socket client = mServerSocket.accept();
                 Log.i(TAG, "=======client connected=======");
                 requestProcessPool.submit(new HandleRequestsRunnable(client));
@@ -110,7 +114,25 @@ public class MediaProxyServer {
     }
 
     private void processRequest(Request request, Socket client) {
-
+        URLConnection connection= null;
+        InputStream is=null;
+        OutputStream os=null;
+        try {
+            connection = request.openConnection();
+            is=connection.getInputStream();
+            os=client.getOutputStream();
+            byte[] buffer=new byte[1024*4];
+            int readBytes=-1;
+            while ((readBytes=is.read(buffer,0,buffer.length))!=-1){
+                Log.d(TAG,"write to client: "+readBytes);
+                os.write(buffer,0,readBytes);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally {
+            Util.closeCloseableQuietly(is);
+            Util.closeCloseableQuietly(os);
+        }
     }
 
     private Request GetRequest(Socket client) throws IOException {
@@ -120,7 +142,7 @@ public class MediaProxyServer {
         while (!TextUtils.isEmpty(line = reader.readLine())) {
             request.append(line).append("\n");
         }
-        Util.closeCloseableQuietly(reader);
+//        Util.closeCloseableQuietly(reader);
         return new Request(request.toString());
     }
 

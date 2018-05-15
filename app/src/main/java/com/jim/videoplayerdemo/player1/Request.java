@@ -17,13 +17,13 @@ import java.util.regex.Pattern;
 
 public class Request {
 
-    public static final int READ_TIME_OUT=60000;
-    public static final int CONNECT_OUT=60000;
+    public static final int READ_TIME_OUT = 60000;
+    public static final int CONNECT_OUT = 60000;
     public final static String HOST = "Host";
     public final static String RANGE = "Range";
     public final static String RANGE_PARAMS = "bytes=";
-    public final static int HTTP_301=301;
-    public final static int HTTP_302=302;
+    public final static int HTTP_301 = 301;
+    public final static int HTTP_302 = 302;
 
     private final String TAG = Request.class.getSimpleName();
     private static final Pattern RANGE_HEADER_PATTERN = Pattern.compile("[R,r]ange:[ ]?bytes=(\\d*)-");
@@ -32,6 +32,7 @@ public class Request {
     public long offset;
     private String request;
     int redirectCount = 0;
+    private boolean canUseCache;
 
     public Request(String request) {
         this.request = request;
@@ -41,7 +42,9 @@ public class Request {
     private void initRequestParam(String request) {
         if (!TextUtils.isEmpty(request)) {
             findUrlAndMethod(request);
-            offset = Math.max(findRangeOffset(request),0);
+            long tempOffset = findRangeOffset(request);
+            canUseCache = tempOffset <= 0;
+            offset = Math.max(tempOffset, 0);
         }
     }
 
@@ -59,53 +62,57 @@ public class Request {
         StringTokenizer tokenizer = new StringTokenizer(requestParts[0]);
         method = tokenizer.nextToken();
         requestUrl = Util.decodeUrl(tokenizer.nextToken());
-        if (requestUrl.startsWith("/")){
-            requestUrl=requestUrl.substring(1);
+        if (requestUrl.startsWith("/")) {
+            requestUrl = requestUrl.substring(1);
         }
         Log.d(TAG, "method: " + method + " url: " + requestUrl);
     }
 
     public URLConnection openConnection() throws IOException {
         HttpURLConnection urlConnection = null;
-        String url=requestUrl;
-        if (TextUtils.isEmpty(url)){
-            Log.d(TAG,"request url can not be null!");
+        String url = requestUrl;
+        if (TextUtils.isEmpty(url)) {
+            Log.d(TAG, "request url can not be null!");
         }
         boolean redirect;
         do {
-            urlConnection= (HttpURLConnection) openRealConnection(url);
-            int code=urlConnection.getResponseCode();
-            redirect=code==HTTP_301||code==HTTP_302;
-            if (redirect){
+            urlConnection = (HttpURLConnection) openRealConnection(url);
+            int code = urlConnection.getResponseCode();
+            redirect = code == HTTP_301 || code == HTTP_302;
+            if (redirect) {
                 url = urlConnection.getHeaderField("Location");
                 urlConnection.disconnect();
                 redirectCount++;
-                if (redirectCount>=3){
-                    redirect=false;
+                if (redirectCount >= 3) {
+                    redirect = false;
                 }
             }
-        }while (redirect);
+        } while (redirect);
         return urlConnection;
     }
 
-    private URLConnection openRealConnection(String requestUrl) throws IOException{
+    private URLConnection openRealConnection(String requestUrl) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) new URL(requestUrl).openConnection();
         urlConnection.setRequestMethod(method);
         urlConnection.setConnectTimeout(CONNECT_OUT);
         urlConnection.setReadTimeout(READ_TIME_OUT);
         String[] requestParts = request.split("\n");
-        for (int i=1;i<requestParts.length;i++){
+        for (int i = 1; i < requestParts.length; i++) {
             int separatorLocation = requestParts[i].indexOf(":");
             String name = requestParts[i].substring(0, separatorLocation).trim();
-            if (name.equals(HOST)){
+            if (name.equals(HOST)) {
                 continue;
             }
             String value = requestParts[i].substring(separatorLocation + 1).trim();
-            Log.d(TAG,"name: "+name+" value: "+value);
-            urlConnection.setRequestProperty(name,value);
+            Log.d(TAG, "name: " + name + " value: " + value);
+            urlConnection.setRequestProperty(name, value);
         }
-        urlConnection.setRequestProperty(RANGE,RANGE_PARAMS+offset+"-");
+        urlConnection.setRequestProperty(RANGE, RANGE_PARAMS + offset + "-");
         return urlConnection;
+    }
+
+    public boolean isCanUseCache() {
+        return canUseCache;
     }
 
 }

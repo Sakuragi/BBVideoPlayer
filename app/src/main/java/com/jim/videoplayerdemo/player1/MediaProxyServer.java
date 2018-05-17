@@ -3,6 +3,8 @@ package com.jim.videoplayerdemo.player1;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.jim.videoplayerdemo.utils.LogUtil;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +18,9 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static com.jim.videoplayerdemo.player1.Request.RANGE;
+import static com.jim.videoplayerdemo.player1.Request.RANGE_PARAMS;
 
 /**
  * Created by Jim on 2018/4/25 0025.
@@ -46,7 +51,7 @@ public class MediaProxyServer {
             listenRequestsThread = new Thread(new ListenRequestRunnable(signal));
             listenRequestsThread.start();
             signal.await();
-            Log.d(TAG,"listen request thread was started");
+            Log.d(TAG, "listen request thread was started");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -105,29 +110,51 @@ public class MediaProxyServer {
     private void handleRequests(Socket client) {
         try {
             Request request = GetRequest(client);
-            processRequest(request,client);
+            processRequest(request, client);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     private void processRequest(Request request, Socket client) {
-        URLConnection connection= null;
-        InputStream is=null;
-        OutputStream os=null;
+        FileCache cache = FileCache.open(request.requestUrl);
+        byte[] buffer = new byte[1024 * 4];
+        int readBytes = -1;
+        URLConnection connection = null;
+        InputStream is = null;
+        OutputStream os = null;
         try {
+        /*第一步，判断本地是否有完整缓存*/
+            if (cache.isCompleted()) {
+                LogUtil.d("cache completed");
+                while ((readBytes = cache.read(buffer, request.offset, buffer.length)) != -1) {
+                    client.getOutputStream().write(buffer, 0, readBytes);
+                    return;
+                }
+            }
+        /*本地有缓存，但不完整*/
+            if (!cache.isCompleted() && cache.available() > request.offset + 2 * 1024 * 1024) {
+                LogUtil.d("return small part of cache: "+cache.available());
+                while ((readBytes = cache.read(buffer, request.offset, buffer.length)) != -1) {
+                    client.getOutputStream().write(buffer, 0, readBytes);
+                }
+            }
+        /*联网获取缓存*/
+            request.offset = cache.available();
             connection = request.openConnection();
             is=connection.getInputStream();
-            os=client.getOutputStream();
-            byte[] buffer=new byte[1024*4];
-            int readBytes=-1;
+            os=connection.getOutputStream();
             while ((readBytes=is.read(buffer,0,buffer.length))!=-1){
-                Log.d(TAG,"write to client: "+readBytes);
-                os.write(buffer,0,readBytes);
+                client.getOutputStream().write(buffer,0,readBytes);
+                cache.append(buffer,readBytes);
+            }
+            if (cache.available()==connection.getContentLength()){
+                LogUtil.d("cache finished");
+                cache.finishedCache();
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        }finally {
+            LogUtil.d(e.toString());
+        } finally {
             Util.closeCloseableQuietly(is);
             Util.closeCloseableQuietly(os);
         }

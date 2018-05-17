@@ -37,7 +37,7 @@ public class FileCache implements Cache {
     }
 
     @Override
-    public int read(byte[] b, int off, int len) throws IOException {
+    public int read(byte[] b, long off, int len) throws IOException {
         dataFile.seek(off);
         return dataFile.read(b,0,len);
     }
@@ -56,5 +56,10 @@ public class FileCache implements Cache {
     public void append(byte[] data, int length) throws IOException {
         dataFile.seek(available());
         dataFile.write(data,0,length);
+    }
+
+    @Override
+    public boolean isCompleted() {
+        return false;
     }
 }

@@ -2,7 +2,10 @@ package com.jim.videoplayerdemo.player1;
 
 import android.util.Base64;
 
+import com.jim.videoplayerdemo.utils.LogUtil;
+
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -12,18 +15,31 @@ import java.io.RandomAccessFile;
 
 public class FileCache implements Cache {
 
+    public static String TEMP=".temp";
+
     public File file;
     private RandomAccessFile dataFile;
 
     private FileCache(String url){
         file=new File(cachePath+Base64.encodeToString(url.getBytes(),Base64.DEFAULT));
-        if (!file.exists()){
+        File tempFile=new File(cachePath+Base64.encodeToString(url.getBytes(),Base64.DEFAULT)+TEMP);
+        if (!file.exists()&&tempFile.exists()){
+           file=tempFile;
+        }else if (!file.exists()){
             try {
                 file.createNewFile();
-                dataFile=new RandomAccessFile(file,"rw");
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+        createDataFile();
+    }
+
+    private void createDataFile(){
+        try {
+            dataFile=new RandomAccessFile(file,"rw");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
@@ -44,7 +60,7 @@ public class FileCache implements Cache {
 
     @Override
     public long available() throws IOException {
-        return file.length();
+        return dataFile.length();
     }
 
     @Override
@@ -60,6 +76,27 @@ public class FileCache implements Cache {
 
     @Override
     public boolean isCompleted() {
-        return false;
+        return !isTempFile(file);
+    }
+
+    @Override
+    public void finishedCache() {
+        if (!isCompleted()){
+            LogUtil.d("is tempfile");
+            return;
+        }
+        boolean renamed=file.renameTo(new File(file.getName().substring(file.getName().length()-TEMP.length())));
+        if (!renamed){
+            LogUtil.d("rename temp file failed");
+        }
+        try {
+            dataFile=new RandomAccessFile(file,"r");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private boolean isTempFile(File file) {
+        return file.getName().endsWith(TEMP);
     }
 }

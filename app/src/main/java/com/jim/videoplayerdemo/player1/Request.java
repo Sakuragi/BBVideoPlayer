@@ -3,6 +3,8 @@ package com.jim.videoplayerdemo.player1;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.jim.videoplayerdemo.utils.LogUtil;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -69,14 +71,16 @@ public class Request {
     }
 
     public URLConnection openConnection() throws IOException {
+        LogUtil.d("openConnection");
         HttpURLConnection urlConnection = null;
         String url = requestUrl;
         if (TextUtils.isEmpty(url)) {
             Log.d(TAG, "request url can not be null!");
         }
+        LogUtil.d("url: "+requestUrl);
         boolean redirect;
         do {
-            urlConnection = (HttpURLConnection) openRealConnection(url);
+            urlConnection = (HttpURLConnection) openRealConnection(url,offset);
             int code = urlConnection.getResponseCode();
             redirect = code == HTTP_301 || code == HTTP_302;
             if (redirect) {
@@ -91,7 +95,7 @@ public class Request {
         return urlConnection;
     }
 
-    private URLConnection openRealConnection(String requestUrl) throws IOException {
+    private URLConnection openRealConnection(String requestUrl,long offset) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) new URL(requestUrl).openConnection();
         urlConnection.setRequestMethod(method);
         urlConnection.setConnectTimeout(CONNECT_OUT);
@@ -113,6 +117,16 @@ public class Request {
 
     public boolean isCanUseCache() {
         return canUseCache;
+    }
+
+    public int getContentLength(){
+        try {
+            HttpURLConnection urlConnection= (HttpURLConnection) openRealConnection(requestUrl,0);
+            return urlConnection.getContentLength();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 
 }

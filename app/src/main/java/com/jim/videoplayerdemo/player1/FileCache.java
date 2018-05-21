@@ -21,25 +21,37 @@ public class FileCache implements Cache {
     private RandomAccessFile dataFile;
 
     private FileCache(String url){
-        file=new File(cachePath+Base64.encodeToString(url.getBytes(),Base64.DEFAULT));
-        File tempFile=new File(cachePath+Base64.encodeToString(url.getBytes(),Base64.DEFAULT)+TEMP);
+        LogUtil.d("cache path: "+cachePath);
+        File file=new File(cachePath+Base64.encodeToString(url.getBytes(),Base64.NO_WRAP));
+        File tempFile=new File(cachePath+Base64.encodeToString(url.getBytes(),Base64.NO_WRAP)+TEMP);
+        LogUtil.d("temp file name: "+tempFile.getName());
         if (!file.exists()&&tempFile.exists()){
-           file=tempFile;
+           this.file=tempFile;
+            LogUtil.d("temp file is exist");
         }else if (!file.exists()){
             try {
-                file.createNewFile();
+                tempFile.getParentFile().mkdirs();
+                boolean isCreated=tempFile.createNewFile();
+                if (isCreated){
+                    LogUtil.d("create tempfile");
+                    this.file=tempFile;
+                }
             } catch (IOException e) {
-                e.printStackTrace();
+                LogUtil.e(e.toString());
             }
+        }else {
+            this.file=file;
+            LogUtil.d("completed file is exist");
         }
         createDataFile();
     }
 
     private void createDataFile(){
+        LogUtil.e("createDataFile");
         try {
             dataFile=new RandomAccessFile(file,"rw");
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            LogUtil.e("File not found");
         }
     }
 
@@ -64,8 +76,8 @@ public class FileCache implements Cache {
     }
 
     @Override
-    public void close() throws IOException {
-
+    public void close() {
+        Util.closeCloseableQuietly(dataFile);
     }
 
     @Override
@@ -81,18 +93,22 @@ public class FileCache implements Cache {
 
     @Override
     public void finishedCache() {
-        if (!isCompleted()){
-            LogUtil.d("is tempfile");
+        if (isCompleted()){
+            LogUtil.d("file was completed");
             return;
         }
-        boolean renamed=file.renameTo(new File(file.getName().substring(file.getName().length()-TEMP.length())));
+        close();
+        String fileName = file.getName().substring(0, file.getName().length() - TEMP.length());
+        File completedFile = new File(file.getParentFile(), fileName);
+        boolean renamed = file.renameTo(completedFile);
         if (!renamed){
             LogUtil.d("rename temp file failed");
         }
+        file=completedFile;
         try {
             dataFile=new RandomAccessFile(file,"r");
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            LogUtil.e(e.toString());
         }
     }
 

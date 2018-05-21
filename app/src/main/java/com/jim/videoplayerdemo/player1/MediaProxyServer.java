@@ -108,6 +108,7 @@ public class MediaProxyServer {
     }
 
     private void handleRequests(Socket client) {
+        LogUtil.d("handleRequests");
         try {
             Request request = GetRequest(client);
             processRequest(request, client);
@@ -117,6 +118,8 @@ public class MediaProxyServer {
     }
 
     private void processRequest(Request request, Socket client) {
+        LogUtil.d("processRequest");
+        LogUtil.d("url: "+request.requestUrl);
         FileCache cache = FileCache.open(request.requestUrl);
         byte[] buffer = new byte[1024 * 4];
         int readBytes = -1;
@@ -127,15 +130,19 @@ public class MediaProxyServer {
         /*第一步，判断本地是否有完整缓存*/
             if (cache.isCompleted()) {
                 LogUtil.d("cache completed");
-                while ((readBytes = cache.read(buffer, request.offset, buffer.length)) != -1) {
+                long offset=request.offset;
+                while ((readBytes = cache.read(buffer, offset, buffer.length)) != -1) {
                     client.getOutputStream().write(buffer, 0, readBytes);
-                    return;
+                    LogUtil.d("read bytes: "+readBytes);
+                    offset+=readBytes;
                 }
+                return;
             }
         /*本地有缓存，但不完整*/
             if (!cache.isCompleted() && cache.available() > request.offset + 2 * 1024 * 1024) {
                 LogUtil.d("return small part of cache: "+cache.available());
                 while ((readBytes = cache.read(buffer, request.offset, buffer.length)) != -1) {
+                    LogUtil.d("read bytes: "+readBytes);
                     client.getOutputStream().write(buffer, 0, readBytes);
                 }
             }
@@ -143,12 +150,12 @@ public class MediaProxyServer {
             request.offset = cache.available();
             connection = request.openConnection();
             is=connection.getInputStream();
-            os=connection.getOutputStream();
             while ((readBytes=is.read(buffer,0,buffer.length))!=-1){
                 client.getOutputStream().write(buffer,0,readBytes);
                 cache.append(buffer,readBytes);
+                LogUtil.d("read bytes: "+readBytes);
             }
-            if (cache.available()==connection.getContentLength()){
+            if (cache.available()==request.getContentLength()&&!cache.isCompleted()){
                 LogUtil.d("cache finished");
                 cache.finishedCache();
             }
